@@ -35,72 +35,45 @@ function gameBoard() {
     return row < rows && row >= 0 && col < cols && col >= 0;
   };
   const getBoard = () => board;
+  const allEqual = (arr) => {
+    const first = arr[0];
+    for (const cell of arr) {
+      if (cell.getMarker() !== first.getMarker()) return false;
+    }
+    return true;
+  };
   const checkWin = () => {
+    // check rows
     for (let i = 0; i < rows; i++) {
-      const firstCell = board[i][0];
-      let equalCells = 1;
-      for (let j = 1; j < cols; j++) {
-        if (
-          !firstCell.isFree() &&
-          firstCell.getMarker() === board[i][j].getMarker()
-        ) {
-          equalCells++;
-        } else {
-          break;
-        }
-      }
-      if (equalCells >= rows) {
-        return { cell: firstCell, index: i, type: "row" };
+      const row = board[i];
+      if (!row[0].isFree() && allEqual(row)) {
+        return { win: true, cell: row[0], index: i, type: "row" };
       }
     }
+    // check cols
     for (let i = 0; i < cols; i++) {
-      const firstCell = board[0][i];
-      let equalCells = 1;
-      for (let j = 1; j < rows; j++) {
-        if (
-          !firstCell.isFree() &&
-          firstCell.getMarker() === board[j][i].getMarker()
-        ) {
-          equalCells++;
-        } else {
-          break;
-        }
+      const col = [];
+      for (let j = 0; j < rows; j++) {
+        col.push(board[j][i]);
       }
-      if (equalCells >= cols) {
-        return { cell: firstCell, index: i, type: "col" };
+      if (!col[0].isFree() && allEqual(col)) {
+        return { win: true, cell: col[0], index: i, type: "row" };
       }
     }
-    for (let i = 0; i < rows; i += 2) {
-      let firstCell = board[0][0];
-      let equalCells = 1;
-      for (let j = 1; j < rows; j++) {
-        if (
-          !firstCell.isFree() &&
-          firstCell.getMarker() === board[j][j].getMarker()
-        ) {
-          equalCells++;
-        } else {
-          break;
-        }
-      }
-      if (equalCells >= cols) {
-        return { cell: firstCell, index: i, type: "diag" };
-      }
-      firstCell = board[0][cols - 1];
-      equalCells = 1;
-      for (let j = 1; j < cols; j++) {
-        if (
-          !firstCell.isFree() &&
-          firstCell.getMarker() === board[j][cols - j - 1].getMarker()
-        ) {
-          equalCells++;
-        } else {
-          break;
-        }
-      }
-      if (equalCells >= cols) {
-        return { cell: firstCell, index: i, type: "diag" };
-      }
+    // check diag
+    const mainDiag = [];
+    for (let i = 0; i < rows; i++) {
+      mainDiag.push(board[i][i]);
+    }
+    if (!mainDiag[0].isFree() && allEqual(mainDiag)) {
+      return { win: true, cell: mainDiag[0], index: 0, type: "mainDiag" };
+    }
+    const secondDiag = [];
+    for (let i = 0; i < rows; i++) {
+      secondDiag.push(board[i][cols - i - 1]);
+    }
+    if (!secondDiag[0].isFree() && allEqual(secondDiag)) {
+      return { win: true, cell: secondDiag[0], index: 0, type: "secondDiag" };
     }
     return { cell: null, index: -1, type: "none" };
   };
@@ -148,19 +121,27 @@ function gameController() {
   };
   const checkWinner = () => {
     const checkWin = game.checkWin();
-    if (checkWin.type !== "none") {
+    if (checkWin.win) {
       console.log(checkWin);
-      console.log(`player with marker ${checkWin.cell.getMarker()} has won`);
+      const winnerPlayer = findPlayer(checkWin.cell.getMarker());
+      console.log(`${winnerPlayer.getName()} has won`);
       finished = 1;
     }
   };
   const switchPlayer = (current) => {
     currentPlayer = current === player[0] ? player[1] : player[0];
   };
+  const findPlayer = (marker) => {
+    for (const pl of player) {
+      if (pl.getMarker() === marker) return pl;
+    }
+    return null;
+  };
   game.printBoard();
   return { game, playTurn };
 }
 const board = gameController();
+board.playTurn(2, 2);
 board.playTurn(2, 0);
 board.playTurn(0, 0);
 board.playTurn(1, 1);
