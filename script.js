@@ -13,27 +13,30 @@ function gameBoard() {
     }
   };
   const printBoard = () => {
+    console.log("----------");
     for (let i = 0; i < rows; i++) {
       let formattedRow = "";
-      console.log("----------");
       for (let j = 0; j < cols; j++) {
         formattedRow += board[i][j].getMarker() + " | ";
       }
       console.log(formattedRow);
       console.log("----------");
     }
-    console.log("");
   };
   const playMove = (row, col, player) => {
-    if (allowedMove(row, col)) {
+    if (validMove(row, col) && allowedMove(row, col)) {
       board[row][col].setMarker(player.getMarker());
+      return true;
     }
+    return false;
   };
-  const allowedMove = (row, col) => {
-    return board[row][col].isFree();
+  const allowedMove = (row, col) => board[row][col].isFree();
+  const validMove = (row, col) => {
+    return row < rows && row >= 0 && col < cols && col >= 0;
   };
+  const getBoard = () => board;
   newBoard();
-  return { newBoard, printBoard, playMove };
+  return { getBoard, newBoard, printBoard, playMove };
 }
 
 function cell() {
@@ -54,13 +57,24 @@ function createPlayer(playerName, playerMarker) {
 function gameController() {
   const playerOne = createPlayer("player1", "O");
   const playerTwo = createPlayer("player2", "X");
-  console.log(playerOne);
+  const player = [playerOne, playerTwo];
+  let currentPlayer = playerOne;
   const game = gameBoard();
+  const playTurn = (row, col) => {
+    console.log(
+      `${currentPlayer.getName()} makes a move in: (${row}, ${col}) (row, column)`
+    );
+    if (game.playMove(row, col, currentPlayer)) {
+      game.printBoard();
+      switchPlayer(currentPlayer);
+    } else {
+      console.log("Invalid move, choose another cell");
+    }
+  };
+  const switchPlayer = (current) => {
+    currentPlayer = current === player[0] ? player[1] : player[0];
+  };
   game.printBoard();
-  game.playMove(0, 1, playerOne);
-  game.printBoard();
-  game.playMove(1, 1, playerTwo);
-  game.printBoard();
-  return { game };
+  return { game, playTurn };
 }
 const board = gameController();
