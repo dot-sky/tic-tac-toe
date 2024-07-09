@@ -1,9 +1,11 @@
 function gameBoard() {
   const rows = 3;
   const cols = 3;
-  const board = [];
+  let board = [];
+  let placedMarks = 0;
 
   const newBoard = () => {
+    board = [];
     for (let i = 0; i < rows; i++) {
       const row = [];
       for (let j = 0; j < cols; j++) {
@@ -23,9 +25,10 @@ function gameBoard() {
       console.log("----------");
     }
   };
-  const playMove = (row, col, player) => {
+  const placeMark = (row, col, player) => {
     if (validMove(row, col) && allowedMove(row, col)) {
       board[row][col].setMarker(player.getMarker());
+      placedMarks++;
       return true;
     }
     return false;
@@ -42,12 +45,12 @@ function gameBoard() {
     }
     return true;
   };
-  const checkWin = () => {
+  const checkState = () => {
     // check rows
     for (let i = 0; i < rows; i++) {
       const row = board[i];
       if (!row[0].isFree() && allEqual(row)) {
-        return { win: true, cell: row[0], index: i, type: "row" };
+        return { state: "win", cell: row[0], index: i, type: "row" };
       }
     }
     // check cols
@@ -57,7 +60,7 @@ function gameBoard() {
         col.push(board[j][i]);
       }
       if (!col[0].isFree() && allEqual(col)) {
-        return { win: true, cell: col[0], index: i, type: "row" };
+        return { state: "win", cell: col[0], index: i, type: "row" };
       }
     }
     // check diag
@@ -66,19 +69,27 @@ function gameBoard() {
       mainDiag.push(board[i][i]);
     }
     if (!mainDiag[0].isFree() && allEqual(mainDiag)) {
-      return { win: true, cell: mainDiag[0], index: 0, type: "mainDiag" };
+      return { state: "win", cell: mainDiag[0], index: 0, type: "mainDiag" };
     }
     const secondDiag = [];
     for (let i = 0; i < rows; i++) {
       secondDiag.push(board[i][cols - i - 1]);
     }
     if (!secondDiag[0].isFree() && allEqual(secondDiag)) {
-      return { win: true, cell: secondDiag[0], index: 0, type: "secondDiag" };
+      return {
+        state: "win",
+        cell: secondDiag[0],
+        index: 0,
+        type: "secondDiag",
+      };
     }
-    return { cell: null, index: -1, type: "none" };
+    if (placedMarks == rows * cols) {
+      return { state: "draw" };
+    }
+    return { state: "none" };
   };
   newBoard();
-  return { getBoard, newBoard, printBoard, playMove, checkWin };
+  return { getBoard, newBoard, printBoard, placeMark, checkState };
 }
 
 function cell() {
@@ -103,15 +114,11 @@ function gameController() {
   const game = gameBoard();
   let currentPlayer = playerOne;
   let finished = 0;
-  const playTurn = (row, col) => {
-    if (finished) {
-      console.log("Game has already finished");
-      return;
-    }
+  const playMove = (row, col) => {
     console.log(
       `${currentPlayer.getName()} makes a move in: (${row}, ${col}) (row, column)`
     );
-    if (game.playMove(row, col, currentPlayer)) {
+    if (game.placeMark(row, col, currentPlayer)) {
       game.printBoard();
       checkWinner();
       switchPlayer(currentPlayer);
@@ -119,17 +126,31 @@ function gameController() {
       console.log("Invalid move, choose another cell");
     }
   };
+  const playTurn = (row, col) => {
+    if (finished) {
+      console.log("Game has already finished");
+      return;
+    }
+    playMove(row, col);
+  };
   const checkWinner = () => {
-    const checkWin = game.checkWin();
-    if (checkWin.win) {
-      console.log(checkWin);
-      const winnerPlayer = findPlayer(checkWin.cell.getMarker());
+    const gameState = game.checkState();
+    if (gameState.state === "win") {
+      const winnerPlayer = findPlayer(gameState.cell.getMarker());
       console.log(`${winnerPlayer.getName()} has won`);
+      finished = 1;
+    } else if (gameState.state === "draw") {
+      console.log(`The game has come to a draw`);
       finished = 1;
     }
   };
   const switchPlayer = (current) => {
     currentPlayer = current === player[0] ? player[1] : player[0];
+  };
+  const restartGame = () => {
+    switchPlayer(player[0]);
+    game.newBoard();
+    finished = 0;
   };
   const findPlayer = (marker) => {
     for (const pl of player) {
@@ -138,16 +159,25 @@ function gameController() {
     return null;
   };
   game.printBoard();
-  return { game, playTurn };
+  return { game, playTurn, restartGame };
 }
 const board = gameController();
-board.playTurn(2, 2);
-board.playTurn(2, 0);
-board.playTurn(0, 0);
-board.playTurn(1, 1);
-board.playTurn(0, 1);
-board.playTurn(0, 2);
-// board.playTurn(2, 1);
-// board.playTurn(2, 0);
-// board.playTurn(0, 2);
 // board.playTurn(2, 2);
+// board.playTurn(2, 0);
+// board.playTurn(0, 0);
+// board.playTurn(1, 1);
+// board.playTurn(0, 1);
+// board.playTurn(0, 2);
+// board.playTurn(2, 1);
+// board.restartGame();
+
+// board.playTurn(0, 0);
+// board.playTurn(0, 1);
+// board.playTurn(1, 0);
+// board.playTurn(1, 2);
+// board.playTurn(2, 2);
+// board.playTurn(2, 0);
+// board.playTurn(2, 1);
+// board.playTurn(1, 1);
+// board.playTurn(0, 2);
+// board.playTurn(0, 0);
